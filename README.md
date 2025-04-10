@@ -1,6 +1,3 @@
-# ModelScout
-ModelScout is a Django-based web application that allows users to upload datasets and train both supervised and unsupervised machine learning models with ease. It provides detailed performance metrics, visualizations (confusion matrices, ROC curves, clustering plots), and model comparisons — all in a user-friendly web interface.
-
 # 🧠 ModelScout
 
 **ModelScout** is a Django-based web application that empowers users to train both **Supervised** and **Unsupervised** Machine Learning models on custom datasets, with interactive visualizations, comparison tables, and performance metrics. Built for learning, experimentation, and rapid prototyping.
