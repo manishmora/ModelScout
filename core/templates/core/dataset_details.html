@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dataset Details - {{ dataset.name }}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block content %}
+    <h1>Dataset: {{ dataset.name }}</h1>
+    <div class="stats-block">
+        <h2>Overview</h2>
+        <p><strong>Number of Rows:</strong> {{ dataset_stats.num_rows }}</p>
+        <p><strong>Number of Columns:</strong> {{ dataset_stats.num_columns }}</p>
+    </div>
+    
+    <div class="stats-block">
+        <h2>Columns</h2>
+        <ul>
+            {% for col in dataset_stats.columns %}
+                <li>{{ col }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="stats-block">
+        <h2>Missing Values</h2>
+        <table>
+            <tr>
+                <th>Column</th>
+                <th>Missing Values</th>
+            </tr>
+            {% for col, val in dataset_stats.missing_values.items %}
+            <tr>
+                <td>{{ col }}</td>
+                <td>{{ val }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    
+    <div class="stats-block">
+        <h2>Data Types</h2>
+        <table>
+            <tr>
+                <th>Column</th>
+                <th>Type</th>
+            </tr>
+            {% for col, dtype in dataset_stats.data_types.items %}
+            <tr>
+                <td>{{ col }}</td>
+                <td>{{ dtype }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    
+    <div class="form-container">
+        <form method="post" id="trainForm">
+            {% csrf_token %}
+            <select name="algo_type" id="algoType">
+                <option value="supervised">Supervised</option>
+                <option value="unsupervised">Unsupervised</option>
+            </select>
+            <button type="submit">Train</button>
+        </form>
+        
+        <script>
+        document.getElementById("trainForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const algoType = document.getElementById("algoType").value;
+            const datasetId = "{{ dataset.id }}";
+            window.location.href = `/dataset/${datasetId}/train/${algoType}/`;
+        });
+        </script>
+                          
+    </div>
+    {% endblock %}
+</body>
+</html>

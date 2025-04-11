@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Upload Dataset{% endblock %}
+
+{% block content %}
+<h1>Upload Dataset</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Upload</button>
+</form>
+
+<br>
+<a href="{% url 'dataset_list' %}">← Back to Datasets</a>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'dataset_details' dataset.id %}" class="text-blue-600 hover:text-blue-800">
+            <button class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600">
+                &larr; Back to Dataset Details
+            </button>
+        </a>
+    </div>
+
+    <!-- Best Model Info -->
+    {% if best_model %}
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold">Best Model: {{ best_model_name }}</h2>
+            <p class="text-lg text-blue-600">
+                {% if best_model.accuracy %}Accuracy: {{ best_model.accuracy|floatformat:4 }} |{% endif %}
+                {% if best_model.cross_val_scores %} Cross-Validation Score: {{ best_model.cross_val_scores|mean }} ± {{ best_model.cross_val_scores|std }} |{% endif %}
+                {% if best_model.silhouette_score %}Silhouette Score: {{ best_model.silhouette_score|floatformat:4 }} |{% endif %}
+                Training Time: {{ best_model.training_time }} seconds
+            </p>
+        </div>
+
+        <!-- Visualizations -->
+        <div class="mb-12 p-6 bg-white rounded-lg shadow-lg">
+            <h3 class="text-2xl font-semibold mb-4">{{ best_model_name }} - Visualizations</h3>
+
+            {% for viz in best_model_visualizations %}
+                <div class="mb-6">
+                    <h4 class="text-xl font-semibold mb-2">{{ best_model_name }} - {{ viz.type }}</h4>
+                    <div class="overflow-hidden rounded-lg border border-gray-200 shadow-md p-2 bg-gray-50">
+                        <img src="{{ viz.url }}" alt="{{ viz.type }}" class="mx-auto" style="max-height: 500px; width: auto; height: auto; max-width: 100%;">
+                        <p class="text-sm text-center mt-2 text-gray-600">Legend: Each color represents a different class/cluster</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Classification Report (Only if exists) -->
+        {% if best_model.report %}
+            <div class="mb-12 p-6 bg-white rounded-lg shadow-lg overflow-x-auto">
+                <h3 class="text-2xl font-semibold mb-4">{{ best_model_name }} - Classification Report</h3>
+
+                {% with report=best_model.report|safe|json_script:"report-json" %}
+                    <table class="min-w-full text-sm text-left text-gray-800 border border-gray-200 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-200 text-gray-700 text-sm uppercase">
+                            <tr>
+                                <th class="px-4 py-2">Label</th>
+                                <th class="px-4 py-2">Precision</th>
+                                <th class="px-4 py-2">Recall</th>
+                                <th class="px-4 py-2">F1-Score</th>
+                                <th class="px-4 py-2">Support</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classification-table-body"></tbody>
+                    </table>
+                {% endwith %}
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- All Model Results -->
+    <div class="mb-12 p-6 bg-white rounded-lg shadow-lg">
+        <h3 class="text-2xl font-semibold mb-4">All Model Results</h3>
+        <table class="min-w-full table-auto border-collapse text-sm text-gray-800">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="py-2 px-4 text-left">Model</th>
+                    <th class="py-2 px-4 text-left">Accuracy</th>
+                    <th class="py-2 px-4 text-left">Cross-Val Score</th>
+                    <th class="py-2 px-4 text-left">Silhouette Score</th>
+                    <th class="py-2 px-4 text-left">Training Time (s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for model in model_results %}
+                    <tr>
+                        <td class="py-2 px-4">{{ model.model_name }}</td>
+                        <td class="py-2 px-4">{{ model.accuracy|default_if_none:"-"|floatformat:4 }}</td>
+                        <td class="py-2 px-4">
+                            {% if model.cv_score_mean and model.cv_score_std %}
+                                {{ model.cv_score_mean }} ± {{ model.cv_score_std }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-4">{{ model.silhouette_score|default_if_none:"-"|floatformat:4 }}</td>
+                        <td class="py-2 px-4">{{ model.training_time }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- All Visualizations -->
+    <div class="mb-12 p-6 bg-white rounded-lg shadow-lg">
+        <h3 class="text-2xl font-semibold mb-4">Model Visualizations</h3>
+        {% for viz in all_visualizations %}
+            <div class="mb-6">
+                <h4 class="text-xl font-semibold mb-2">{{ viz.model_name }} - {{ viz.type }}</h4>
+                <div class="overflow-hidden rounded-lg border border-gray-200 shadow-md p-2 bg-gray-50">
+                    <img src="{{ viz.url }}" alt="{{ viz.type }}" class="mx-auto" style="max-height: 500px; width: auto; height: auto; max-width: 100%;">
+                    <p class="text-sm text-center mt-2 text-gray-600">Legend: Each color represents a different class/cluster</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- JS to render classification report if present -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const reportDataElement = document.getElementById("report-json");
+        if (!reportDataElement) return;
+
+        const data = JSON.parse(reportDataElement.textContent);
+        const tableBody = document.getElementById("classification-table-body");
+
+        for (const label in data) {
+            if (typeof data[label] === 'object') {
+                const row = document.createElement("tr");
+
+                const name = document.createElement("td");
+                name.className = "px-4 py-2 font-medium text-gray-900";
+                name.textContent = label;
+
+                const precision = document.createElement("td");
+                precision.className = "px-4 py-2";
+                precision.textContent = data[label]["precision"]?.toFixed(2) ?? "-";
+
+                const recall = document.createElement("td");
+                recall.className = "px-4 py-2";
+                recall.textContent = data[label]["recall"]?.toFixed(2) ?? "-";
+
+                const f1 = document.createElement("td");
+                f1.className = "px-4 py-2";
+                f1.textContent = data[label]["f1-score"]?.toFixed(2) ?? "-";
+
+                const support = document.createElement("td");
+                support.className = "px-4 py-2";
+                support.textContent = data[label]["support"] ?? "-";
+
+                row.append(name, precision, recall, f1, support);
+                tableBody.appendChild(row);
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Your Datasets | ModelScout{% endblock %}
+
+{% block content %}
+    <h2>Uploaded Datasets</h2>
+    
+    {% if datasets %}
+        <div>
+            {% for dataset in datasets %}
+                <div style="margin-bottom: 10px;">
+                    <a href="{% url 'dataset_details' dataset.id %}">{{ dataset.name }}</a>
+                    &nbsp;|&nbsp;
+                    <a href="{% url 'delete_dataset' dataset.pk %}" 
+                       onclick="return confirm('Are you sure you want to delete this dataset?');">
+                        🗑️ Delete
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No datasets uploaded yet.</p>
+    {% endif %}
+
+    <div style="margin-top: 20px;">
+        <a href="{% url 'upload_dataset' %}">Upload a new dataset</a>
+    </div>
+{% endblock %}
