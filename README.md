@@ -52,7 +52,7 @@ Visualizations & Scores:
 ### Clone & Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/modelscout.git
+git clone https://github.com/manishmora/modelscout.git
 cd modelscout
 
 # Set up virtual environment
